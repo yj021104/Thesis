@@ -1,4 +1,4 @@
-# ¼ÓÔØ±ØÒª°ü
+# åŠ è½½å¿…è¦åŒ…
 library(randomForest)
 library(caret)
 library(pdp)
@@ -6,57 +6,50 @@ library(ggplot2)
 library(haven)
 library(dplyr)
 
-# Êı¾İµ¼Èë
-df <- read_sav("D:/yangjing/data/pre.sav")
+# æ•°æ®å¯¼å…¥
+df <- read_sav("D:/pre.sav")
 
-vars <- c("Investigation", "Gender", "Age", "Marital", "Education", "Family", 
-          "Income", "AnnualIncome", "Dailyexpense", "Treatmentexpense", 
-          "TimeAllocation", "LifeExperience", "Conflict", 
-          "Health", "AIDSHasLittletoDowithOneself", 
-          "KeepinTouchwithwhoGetHIV", "AIDSPeoplemesansImmoral", "UsingCondoms", 
-          "NMS", "HaventReceivedAnyServices", "ServicesHopedDistributionofPublicityMaterials", 
-          "ServicesHopedRegularProvisionofCondoms", "ServicesHopedDoorPublicity", 
-          "ServicesHopedHealthDisplayWindows", "ServicesHopedNotNeeded")
-target_var <- "AIDSKnowledge"  
+vars <- c("")
+target_var <- ""  
 
-# Ö±½Ó×ª»»ËùÓĞ±äÁ¿ÎªÒò×Ó£¨×Ô¶¯´¦Àí±êÇ©±àÂë£©
+# ç›´æ¥è½¬æ¢æ‰€æœ‰å˜é‡ä¸ºå› å­ï¼ˆè‡ªåŠ¨å¤„ç†æ ‡ç­¾ç¼–ç ï¼‰
 df_prepared <- df %>% 
   mutate(
     across(everything(), ~ {
-      # Èç¹û±äÁ¿ÓĞ±êÇ©£¬Ê¹ÓÃ±êÇ©×ª»»
+      # å¦‚æœå˜é‡æœ‰æ ‡ç­¾ï¼Œä½¿ç”¨æ ‡ç­¾è½¬æ¢
       if (inherits(.x, "labelled")) {
         haven::as_factor(.x)
       } else {
-        # ·ñÔòÖ±½Ó×ª»»ÎªÒò×Ó£¨±£³ÖÔ­Ê¼ÊıÖµ×÷ÎªË®Æ½£©
+        # å¦åˆ™ç›´æ¥è½¬æ¢ä¸ºå› å­ï¼ˆä¿æŒåŸå§‹æ•°å€¼ä½œä¸ºæ°´å¹³ï¼‰
         as.factor(.x)
       }
     })
   )
 
-# °´²å²¹¼¯·Ö×é
+# æŒ‰æ’è¡¥é›†åˆ†ç»„
 imp_data <- split(df_prepared, df_prepared$imp)
 
-# ³õÊ¼»¯´æ´¢½á¹û
+# åˆå§‹åŒ–å­˜å‚¨ç»“æœ
 results_list <- list()
 importance_list <- list()
 oob_list <- list()
 
-# ´´½¨Êä³öÄ¿Â¼
+# åˆ›å»ºè¾“å‡ºç›®å½•
 dir.create("output_plots", showWarnings = FALSE)
 
-# ±éÀúÃ¿¸ö²å²¹Êı¾İ¼¯
+# éå†æ¯ä¸ªæ’è¡¥æ•°æ®é›†
 for (i in seq_along(imp_data)) {
   cat("Processing imputation set", i, "\n")
   
   current_data <- imp_data[[i]]
   
-  # ·Ö²ã³éÑù
+  # åˆ†å±‚æŠ½æ ·
   set.seed(42)
   train_index <- createDataPartition(current_data[[target_var]], p = 0.7, list = FALSE)
   train_data <- current_data[train_index, ]
   test_data <- current_data[-train_index, ]
   
-  # ¹¹½¨Ëæ»úÉ­ÁÖÄ£ĞÍ
+  # æ„å»ºéšæœºæ£®æ—æ¨¡å‹
   rf_model <- randomForest(
     x = train_data[, vars],
     y = train_data[[target_var]],
@@ -65,20 +58,20 @@ for (i in seq_along(imp_data)) {
     importance = TRUE
   )
   
-  # ´æ´¢ÖØÒªĞÔ½á¹û
+  # å­˜å‚¨é‡è¦æ€§ç»“æœ
   importance_list[[i]] <- importance(rf_model, type = 2)
   
-  # ´æ´¢OOBÎó²î
+  # å­˜å‚¨OOBè¯¯å·®
   oob_list[[i]] <- data.frame(
     Tree = 1:rf_model$ntree,
     OOB = rf_model$err.rate[, "OOB"],
     Imputation = paste("Imp", i)
   )
   
-  # »ñÈ¡Ç°5¸öÖØÒª±äÁ¿
+  # è·å–å‰5ä¸ªé‡è¦å˜é‡
   top5_vars <- names(sort(importance(rf_model, type = 2)[, "MeanDecreaseGini"], decreasing = TRUE))[1:5]
   
-  # ´´½¨PDPÍ¼
+  # åˆ›å»ºPDPå›¾
   pdf(file = file.path("output_plots", paste0("PDP_Imp_", i, ".pdf")), 
       width = 15, height = 10)
   par(mfrow = c(2, 3))
@@ -101,7 +94,7 @@ for (i in seq_along(imp_data)) {
   }
   dev.off()
   
-  # ±£´æ±äÁ¿ÖØÒªĞÔÍ¼
+  # ä¿å­˜å˜é‡é‡è¦æ€§å›¾
   pdf(file = file.path("output_plots", paste0("VarImp_Imp_", i, ".pdf")),
       width = 10, height = 8)
   varImpPlot(rf_model, 
@@ -111,7 +104,7 @@ for (i in seq_along(imp_data)) {
   dev.off()
 }
 
-# »æÖÆ²¢±£´æÆ½¾ù±äÁ¿ÖØÒªĞÔÍ¼
+# ç»˜åˆ¶å¹¶ä¿å­˜å¹³å‡å˜é‡é‡è¦æ€§å›¾
 pdf(file = file.path("output_plots", "Average_Variable_Importance.pdf"),
     width = 10, height = 8)
 mean_importance <- Reduce("+", importance_list) / length(importance_list)
@@ -122,7 +115,7 @@ barplot(sort(mean_importance[, "MeanDecreaseGini"], decreasing = TRUE),
         ylab = "Mean Decrease in Gini")
 dev.off()
 
-# »æÖÆ²¢±£´æOOBÎó²îÂÊÍ¼
+# ç»˜åˆ¶å¹¶ä¿å­˜OOBè¯¯å·®ç‡å›¾
 pdf(file = file.path("output_plots", "OOB_Error_Rates.pdf"),
     width = 10, height = 6)
 oob_df <- do.call(rbind, oob_list)
@@ -134,5 +127,5 @@ ggplot(oob_df, aes(x = Tree, y = OOB, color = Imputation)) +
   theme_minimal()
 dev.off()
 
-# ´òÓ¡´æ´¢Î»ÖÃĞÅÏ¢
+# æ‰“å°å­˜å‚¨ä½ç½®ä¿¡æ¯
 cat("\nOutput files have been saved to:", normalizePath("output_plots"), "\n")
